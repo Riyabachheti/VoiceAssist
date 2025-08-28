@@ -81,12 +81,6 @@ pip install SpeechRecognition pyttsx3 pyautogui easyocr fuzzywuzzy PyPDF2 python
 >
 > * On some systems `pyautogui` may require additional OS-level accessibility permissions (macOS) or running in an active desktop session (Linux X11). It may not work on Wayland without extra setup.
 
-4. (Optional) Create `requirements.txt`:
-
-```bash
-pip freeze > requirements.txt
-```
-
 ---
 
 ## Running the assistant
