@@ -130,10 +130,13 @@ def voice_to_type():
     speak("What should I type?")
     text = listen()
     time.sleep(0.5)
-    if text:
-        speak("Typing now.")
-        time.sleep(2)
-        pyautogui.typewrite(text)
+    if not text:
+        speak("No text was detected. Please say search and try again.")
+        return False
+    speak("Typing now.")
+    time.sleep(2)
+    pyautogui.typewrite(text)
+    return True
 
 def open_in_chrome(url):
     """Open a URL in Chrome and give the page time to become active."""
@@ -353,7 +356,8 @@ def execute_yt():
             speak("Focusing the YouTube search bar. ")
             pyautogui.press('/')
             time.sleep(0.5)
-            voice_to_type()
+            if not voice_to_type():
+                return
             time.sleep(1)
             speak("Do you want me to press the search button?")
             confirmation = listen()
