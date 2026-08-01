@@ -1,100 +1,208 @@
 # VoiceAssist
 
-**Description**
+VoiceAssist is a Python desktop-automation prototype controlled with spoken
+commands. It combines speech recognition, text-to-speech, OCR, fuzzy string
+matching, document extraction, and mouse/keyboard automation.
 
-VoiceAssist is a desktop voice-controlled assistant written in Python. It listens for spoken commands (via microphone), speaks back using text‑to‑speech, automates desktop interactions (clicking, typing, scrolling) and can read local text/PDF/Word files aloud. It also includes specific flows for YouTube, Google Search and WhatsApp Web automation.
+The project explores a simple accessibility idea: letting a user operate common
+browser tasks and hear local documents without relying entirely on a mouse and
+keyboard.
 
-## Features
+## What it can do
 
-* Microphone-based speech recognition and voice responses (speech-to-text / text-to-speech).
-* Desktop automation using mouse/keyboard (via `pyautogui`): click, type, scroll, hotkeys.
-* OCR-based on-screen text detection (via `easyocr`) with fuzzy matching to click items by title.
-* Read aloud local files: `.txt`, `.pdf`, `.docx` using `PyPDF2` and `python-docx`.
-* Basic flows for interacting with:
+- Recognize commands spoken through a microphone.
+- Speak confirmations and errors aloud.
+- Open and control basic YouTube and Google workflows.
+- Dictate text into the currently focused input.
+- Detect visible screen text with EasyOCR and click the closest fuzzy match.
+- Read text from `.txt`, `.pdf`, and `.docx` documents.
+- Send a WhatsApp Web message only after spoken confirmation.
+- Enter and leave a sleep mode.
 
-  * YouTube (search, click video, play/pause, mute, navigation)
-  * Google Search (type + optional enter)
-  * WhatsApp Web (select contact, type/send messages, attach files)
-  * Google Calendar (create reminders/tasks — partial implementation)
-* Sleep/wake mode and a simple command dispatcher.
+WhatsApp Web and Google Calendar support are experimental because those pages
+change frequently and some actions still depend on screen coordinates.
 
----
+## Architecture
 
-## Quick demo (what to say)
+```text
+Microphone
+    |
+    v
+Google Speech Recognition
+    |
+    v
+Rule-based command dispatcher
+    |--------------------|--------------------|
+    v                    v                    v
+Browser/GUI actions   OCR + fuzzy match   Document extraction
+    |                    |                    |
+    |--------------------|--------------------|
+                         v
+                 Spoken confirmation
+```
 
-Run the assistant and say short commands like:
+The implementation is intentionally small:
 
-* `open youtube` — opens YouTube and accepts follow-up voice commands.
-* `open google` — opens Google and can type a search.
-* `open whatsapp` — opens WhatsApp Web (scan QR with your phone first).
-* `reminder` — opens Google Calendar to create a reminder/task.
-* `type something` or `write something` — voice-to-type into the active input.
-* `close tab`, `copy link`, `exit`, `sleep`, `wake up` — control assistant or browser.
-* While inside flows you can say `search`, `click <title>`, `scroll down`, `play`, `pause`, `mute`, etc.
+```text
+voice.py             Main loop, speech, command flows, and desktop actions
+assistant_utils.py   Pure file, command, and OCR-selection utilities
+config.py            URLs, timing values, OCR threshold, and screen positions
+tests/                Fast tests that do not use a real microphone or mouse
+```
 
----
+## How OCR-based clicking works
+
+When the user asks to click a visible title, VoiceAssist:
+
+1. Saves a temporary screenshot.
+2. Uses EasyOCR to detect text and bounding boxes.
+3. Compares each detected string with the spoken title using fuzzy matching.
+4. Selects the highest-scoring result.
+5. Clicks the centre of its bounding box if the score meets the configured
+   threshold.
+6. Deletes the temporary screenshot.
+
+This is the most important technical workflow in the project. Fuzzy matching
+helps when speech recognition and OCR produce strings that are similar but not
+identical.
+
+## Requirements
+
+- Python 3.9 or newer
+- A microphone and speakers
+- Internet access for Google Speech Recognition
+- OS permission for microphone, accessibility, and screen capture
+- An active graphical desktop session
 
 ## Installation
 
-> These steps assume you have Python 3.8+ installed and a working microphone and speakers.
-
-1. **Clone the repository**
+Clone the repository and create a virtual environment:
 
 ```bash
 git clone https://github.com/Riyabachheti/VoiceAssist.git
 cd VoiceAssist
+python -m venv .venv
 ```
 
-2. **Create and activate a virtual environment (recommended)**
+Activate it:
 
 ```bash
-python -m venv venv
-# macOS / Linux
-source venv/bin/activate
-# Windows (PowerShell)
-venv\Scripts\Activate.ps1
+# macOS or Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
 ```
 
-3. **Install Python dependencies**
-
-A minimal set of packages used in the project:
+Install the Python packages:
 
 ```bash
-pip install SpeechRecognition pyttsx3 pyautogui easyocr fuzzywuzzy PyPDF2 python-docx pillow
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-> **Important notes**:
->
-> * `easyocr` requires **PyTorch**. Install a CPU/GPU-compatible PyTorch build first following the official instructions for your platform, for example:
->
->   ```bash
->   # example for CPU-only (check https://pytorch.org for the correct command for your system)
->   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
->   pip install easyocr
->   ```
->
-> * **Microphone support**: `SpeechRecognition` typically depends on `PyAudio`. Installing `PyAudio` can be system-dependent:
->
->   * Windows: `pip install pipwin && pipwin install pyaudio`
->   * macOS: `brew install portaudio && pip install pyaudio`
->   * Linux (Debian/Ubuntu): `sudo apt-get install portaudio19-dev && pip install pyaudio`
->
-> * On some systems `pyautogui` may require additional OS-level accessibility permissions (macOS) or running in an active desktop session (Linux X11). It may not work on Wayland without extra setup.
+### Microphone dependency
 
----
+`SpeechRecognition` uses PyAudio for microphone input. Its installation depends
+on the operating system.
 
-## Running the assistant
+macOS:
 
-Start the assistant from the repository root. The main script in this repo is `voice.py` (the file with `if __name__ == "__main__":`). Run it with:
+```bash
+brew install portaudio
+pip install PyAudio
+```
+
+Debian/Ubuntu:
+
+```bash
+sudo apt-get install portaudio19-dev
+pip install PyAudio
+```
+
+On Windows, a compatible PyAudio wheel may be required.
+
+EasyOCR also installs PyTorch. The first OCR operation can take longer because
+the OCR reader and its models are initialized at that point.
+
+## Run
 
 ```bash
 python voice.py
 ```
 
-When it starts the assistant will say it is ready and repeatedly prompt: "What can I do for you?" — speak one of the supported commands.
+Example top-level commands:
 
-### Example flow
+```text
+open youtube
+open google
+open whatsapp
+open calendar
+type something
+copy link
+close tab
+sleep
+wake up
+stop assistant
+```
 
-1. `open youtube` — the assistant opens YouTube in your default browser.
-2. Say `search` or `find` and then speak your query — the assistant types it into the search bar and optionally presses search if you confirm.
-3. Say `click` and then speak a part of the video title — the assistant uses an OCR snapshot + fuzzy matching to try to click the matching title.
+## Recommended demo
+
+The most representative demo is:
+
+1. Run `python voice.py`.
+2. Say **open YouTube**.
+3. Say **search** and dictate a query.
+4. Say **click** and speak part of a visible video title.
+5. VoiceAssist captures the screen, finds the closest OCR match, and clicks it.
+
+Before demonstrating, use the same display resolution, browser size, and zoom
+level used during testing. A short screen recording is recommended as a backup
+when presenting in an environment with uncertain microphone or network access.
+
+## Tests
+
+The utility tests deliberately avoid real microphone and GUI operations:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+They cover supported file types, latest-file selection, normalized command
+matching, and selection of the best OCR result.
+
+## Safety and reliability improvements
+
+- Listening has both a start timeout and a phrase-length limit.
+- Microphone and recognition failures receive understandable feedback.
+- OCR screenshots are deleted after processing.
+- Empty contact names and titles are rejected.
+- WhatsApp messages require confirmation before being sent.
+- Constants and screen positions are kept in `config.py`.
+- OCR is initialized only when screen recognition is first requested.
+
+## Known limitations
+
+- Google Speech Recognition requires an internet connection.
+- PyAutoGUI controls whichever window currently has focus.
+- Several browser actions depend on coordinates calibrated for the original
+  machine and can break at other resolutions or after website redesigns.
+- OCR can misread stylized, small, or low-contrast text.
+- Scanned PDFs may not contain extractable text.
+- This is a rule-based automation prototype, not a general conversational AI.
+
+## Future improvements
+
+- Replace coordinate-based browser actions with Playwright or Selenium locators.
+- Add a calibration flow for screen positions.
+- Add structured logging and more mocked tests.
+- Support offline speech recognition.
+- Introduce a command registry if the number of commands grows substantially.
+
+The project intentionally avoids these additions for now so its core workflow
+remains small, understandable, and easy to demonstrate.
+
+## Technology stack
+
+Python, SpeechRecognition, pyttsx3, PyAutoGUI, EasyOCR, FuzzyWuzzy, PyPDF2,
+python-docx, Pillow, and `unittest`.
