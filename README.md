@@ -1,4 +1,4 @@
-# VoiceAssist
+# VAANI : Voice Activated Assistance and Navigation Interface
 
 VoiceAssist is a macOS-focused Python voice assistant for navigating Google
 Chrome. It combines speech recognition, native text-to-speech, keyboard/browser
