@@ -163,8 +163,8 @@ The most representative demo is:
 
 1. Run `python voice.py`.
 2. Say **open YouTube**.
-3. Say **search**, dictate a query, and confirm it. VoiceAssist opens the
-   YouTube results URL directly instead of relying on a toolbar-dependent click.
+3. Say **search**, dictate a query, and confirm it. VoiceAssist uses YouTube's
+   `/` keyboard shortcut to focus the search box, avoiding fixed coordinates.
 4. Say **click** and speak part of a visible video title.
 5. VoiceAssist captures the screen, finds the closest OCR match, and clicks it.
 

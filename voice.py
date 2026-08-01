@@ -2,11 +2,12 @@
 This module uses speech recognition, text-to-speech, and screen automation to perform tasks"""
 
 import os
+import platform
+import subprocess
 import tempfile
 import time
 import webbrowser
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import docx
 import easyocr
@@ -26,7 +27,8 @@ from config import (
     URLS,
 )
 
-engine = pyttsx3.init()
+IS_MACOS = platform.system() == "Darwin"
+engine = None if IS_MACOS else pyttsx3.init()
 recognizer = sr.Recognizer()
 ocr_reader = None
 
@@ -34,8 +36,19 @@ ocr_reader = None
 def speak(text: str) -> None:
     """Print and speak a response."""
     print(f"Assistant: {text}")
-    engine.say(text)
-    engine.runAndWait()
+    if IS_MACOS:
+        # pyttsx3's NSSpeechSynthesizer driver can become silent after several
+        # calls on recent macOS/Python combinations. The native command blocks
+        # until speech finishes and remains reliable across repeated prompts.
+        try:
+            subprocess.run(["/usr/bin/say", str(text)], check=False)
+            return
+        except OSError as error:
+            print(f"macOS speech error: {error}")
+
+    if engine is not None:
+        engine.say(str(text))
+        engine.runAndWait()
 
 
 def listen(prompt: str = "") -> str:
@@ -173,9 +186,15 @@ def click_by_title(target_title: str) -> bool:
 def handle_browser_navigation(command: str) -> bool:
     """Handle navigation shared by the Google, YouTube, and WhatsApp modes."""
     if contains_any(command, ["scroll down"]):
-        pyautogui.press("pagedown")
+        width, height = pyautogui.size()
+        pyautogui.moveTo((width or 1000) // 2, (height or 700) // 2, duration=0.2)
+        pyautogui.scroll(-6)
+        speak("Scrolling down.")
     elif contains_any(command, ["scroll up"]):
-        pyautogui.press("pageup")
+        width, height = pyautogui.size()
+        pyautogui.moveTo((width or 1000) // 2, (height or 700) // 2, duration=0.2)
+        pyautogui.scroll(6)
+        speak("Scrolling up.")
     elif contains_any(command, ["go back"]):
         pyautogui.hotkey("alt", "left")
     elif contains_any(command, ["go forward"]):
@@ -184,7 +203,8 @@ def handle_browser_navigation(command: str) -> bool:
         pyautogui.hotkey("ctrl", "w")
     else:
         return False
-    speak("Done.")
+    if not contains_any(command, ["scroll down", "scroll up"]):
+        speak("Done.")
     return True
 
 
@@ -198,14 +218,17 @@ def youtube_mode() -> None:
             speak("Leaving YouTube mode.")
             return
         if contains_any(command, ["search", "find"]):
-            query = listen("What should I search for?")
-            if query and contains_any(
-                listen(f"Should I search YouTube for {query}?"), ["yes", "ok"]
-            ):
-                webbrowser.open(
-                    f"{URLS['youtube']}/results?search_query={quote_plus(query)}"
-                )
-                speak("Showing YouTube search results.")
+            speak("Focusing the YouTube search bar.")
+            pyautogui.press("/")
+            time.sleep(0.5)
+            if voice_to_type("What should I search for?"):
+                confirmation = listen("Should I press the search button?")
+                if contains_any(confirmation, ["yes", "ok", "search"]):
+                    speak("Pressing search.")
+                    pyautogui.press("enter")
+                    time.sleep(2)
+                else:
+                    speak("Okay, not submitting the search.")
         elif contains_any(command, ["click", "video"]):
             click_by_title(listen("Which title should I click?"))
         elif contains_any(command, ["play", "pause"]):
