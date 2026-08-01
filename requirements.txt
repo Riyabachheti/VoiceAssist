@@ -1,0 +1,8 @@
+SpeechRecognition==3.17.0
+PyAudio==0.2.14
+pyttsx3==2.99
+PyAutoGUI==0.9.54
+easyocr==1.7.2
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.27.3
+Pillow==11.3.0

@@ -1,100 +1,133 @@
 # VoiceAssist
 
-**Description**
+VoiceAssist is a macOS-focused Python voice assistant for navigating Google
+Chrome. It combines speech recognition, native text-to-speech, keyboard/browser
+automation, and OCR-based visible-text matching.
 
-VoiceAssist is a desktop voice-controlled assistant written in Python. It listens for spoken commands (via microphone), speaks back using text‑to‑speech, automates desktop interactions (clicking, typing, scrolling) and can read local text/PDF/Word files aloud. It also includes specific flows for YouTube, Google Search and WhatsApp Web automation.
+The project deliberately keeps its interview demo small: YouTube and Chrome
+navigation are the primary flow, while WhatsApp messages require confirmation
+and Calendar events open as reviewable drafts.
 
 ## Features
 
-* Microphone-based speech recognition and voice responses (speech-to-text / text-to-speech).
-* Desktop automation using mouse/keyboard (via `pyautogui`): click, type, scroll, hotkeys.
-* OCR-based on-screen text detection (via `easyocr`) with fuzzy matching to click items by title.
-* Read aloud local files: `.txt`, `.pdf`, `.docx` using `PyPDF2` and `python-docx`.
-* Basic flows for interacting with:
+- Continuous speech-command loop with spoken responses.
+- Contextual and interactive command help.
+- Chrome navigation: scrolling, history, reload, tabs, page position, and URL copy.
+- Same-tab navigation by default, with explicit new-tab and new-window commands.
+- YouTube search, visible-title selection, playback, seeking, mute, and full screen.
+- Temporary YouTube muting while the assistant listens, preventing video audio
+  from being recognized as a command.
+- WhatsApp Web contact confirmation, spoken contact correction/spelling, message
+  read-back, and confirmation before sending.
+- URL-based Google search without resolution-dependent mouse coordinates.
+- Dated Google Calendar event drafts with a pre-filled title and manual review
+  before save.
+- Confirmed Calendar saving through the visible Save button.
+- Tests for command routing and safety-sensitive behavior.
 
-  * YouTube (search, click video, play/pause, mute, navigation)
-  * Google Search (type + optional enter)
-  * WhatsApp Web (select contact, type/send messages, attach files)
-  * Google Calendar (create reminders/tasks — partial implementation)
-* Sleep/wake mode and a simple command dispatcher.
+## Safety and reliability
 
----
+- WhatsApp never types before the chats screen and contact are verified.
+- Messages are read back and require confirmation before Enter is pressed.
+- Calendar events are opened as drafts; VoiceAssist does not claim they were saved.
+- Exiting YouTube, Google, WhatsApp, or Calendar asks whether to close the tab.
+- OCR clicks are restricted to the active Chrome window.
 
-## Quick demo (what to say)
+## Requirements
 
-Run the assistant and say short commands like:
+- macOS with Google Chrome
+- Python 3.13 (the tested interview environment)
+- A working microphone and internet connection
+- Chrome signed in to WhatsApp Web/Google services when those flows are used
 
-* `open youtube` — opens YouTube and accepts follow-up voice commands.
-* `open google` — opens Google and can type a search.
-* `open whatsapp` — opens WhatsApp Web (scan QR with your phone first).
-* `reminder` — opens Google Calendar to create a reminder/task.
-* `type something` or `write something` — voice-to-type into the active input.
-* `close tab`, `copy link`, `exit`, `sleep`, `wake up` — control assistant or browser.
-* While inside flows you can say `search`, `click <title>`, `scroll down`, `play`, `pause`, `mute`, etc.
-
----
-
-## Installation
-
-> These steps assume you have Python 3.8+ installed and a working microphone and speakers.
-
-1. **Clone the repository**
+Install the Python dependencies:
 
 ```bash
-git clone https://github.com/Riyabachheti/VoiceAssist.git
-cd VoiceAssist
+python -m pip install -r requirements.txt
 ```
 
-2. **Create and activate a virtual environment (recommended)**
+On Apple Silicon, install a native FLAC executable for SpeechRecognition if
+audio conversion reports `Bad CPU type in executable`:
 
 ```bash
-python -m venv venv
-# macOS / Linux
-source venv/bin/activate
-# Windows (PowerShell)
-venv\Scripts\Activate.ps1
+conda install -c conda-forge libflac
 ```
 
-3. **Install Python dependencies**
+Grant the terminal or VS Code these macOS permissions when requested:
 
-A minimal set of packages used in the project:
+- Microphone
+- Accessibility
+- Screen Recording
 
-```bash
-pip install SpeechRecognition pyttsx3 pyautogui easyocr fuzzywuzzy PyPDF2 python-docx pillow
-```
-
-> **Important notes**:
->
-> * `easyocr` requires **PyTorch**. Install a CPU/GPU-compatible PyTorch build first following the official instructions for your platform, for example:
->
->   ```bash
->   # example for CPU-only (check https://pytorch.org for the correct command for your system)
->   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
->   pip install easyocr
->   ```
->
-> * **Microphone support**: `SpeechRecognition` typically depends on `PyAudio`. Installing `PyAudio` can be system-dependent:
->
->   * Windows: `pip install pipwin && pipwin install pyaudio`
->   * macOS: `brew install portaudio && pip install pyaudio`
->   * Linux (Debian/Ubuntu): `sudo apt-get install portaudio19-dev && pip install pyaudio`
->
-> * On some systems `pyautogui` may require additional OS-level accessibility permissions (macOS) or running in an active desktop session (Linux X11). It may not work on Wayland without extra setup.
-
----
-
-## Running the assistant
-
-Start the assistant from the repository root. The main script in this repo is `voice.py` (the file with `if __name__ == "__main__":`). Run it with:
+## Run
 
 ```bash
+conda activate interview
 python voice.py
 ```
 
-When it starts the assistant will say it is ready and repeatedly prompt: "What can I do for you?" — speak one of the supported commands.
+VoiceAssist measures ambient noise once, announces that it is ready, and then
+waits for commands.
 
-### Example flow
+## Useful commands
 
-1. `open youtube` — the assistant opens YouTube in your default browser.
-2. Say `search` or `find` and then speak your query — the assistant types it into the search bar and optionally presses search if you confirm.
-3. Say `click` and then speak a part of the video title — the assistant uses an OCR snapshot + fuzzy matching to try to click the matching title.
+| Context | Example command | Result |
+| --- | --- | --- |
+| Assistant | `list commands` | Prints the complete guide |
+| Assistant | `help youtube` | Explains YouTube commands |
+| Assistant | `quit assistant` | Terminates VoiceAssist |
+| Chrome | `scroll down` | Scrolls the active page |
+| Chrome | `go back` | Uses Chrome history |
+| Chrome | `dismiss popup` | Presses Escape to dismiss the active popup |
+| YouTube | `search Python DSA tutorial` | Opens YouTube results |
+| YouTube | `open DSA using Python` | Clicks matching visible text |
+| YouTube | `pause` | Toggles playback |
+| YouTube | `forward` / `back` | Seeks ten seconds |
+| YouTube | `exit youtube` | Leaves mode and asks about closing the tab |
+| WhatsApp | `change contact to Riya` | Corrects the recognized contact |
+| WhatsApp | `spell contact` | Accepts a letter-by-letter contact name |
+| WhatsApp | `text where are you` | Types, reads back, then asks before sending |
+| Google | `search Java collections` | Opens an encoded Google results URL |
+| Calendar | `create event Cognizant interview` | Asks for a date, then opens a draft |
+| Calendar | `save it` | Confirms, then clicks the visible Save button |
+
+Sites use the active Chrome tab unless the opening command includes `in a new
+tab` or `in a new window`.
+
+## Command help
+
+- Say `help` inside a mode for a short contextual overview.
+- Say `detailed help` to hear commands one at a time.
+- During detailed help, say `next`, `repeat`, or `stop help`.
+- Ask about one command directly, for example `explain forward command`.
+
+## Tests
+
+Run the full suite:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Run static validation:
+
+```bash
+python -m py_compile voice.py command_guide.py
+ruff check voice.py command_guide.py tests
+```
+
+## Project structure
+
+- `voice.py` — assistant loop, speech, Chrome controls, and application modes.
+- `command_guide.py` — data-driven contextual command documentation.
+- `tests/` — mocked unit tests that do not control the developer's live Chrome.
+
+## Limitations
+
+- Speech recognition uses Google's online recognizer and therefore needs internet.
+- OCR can only select text currently visible in the active Chrome window.
+- Website layout changes may affect OCR-based WhatsApp interaction.
+- The Calendar flow requires a spoken date and opens an all-day draft; the user
+  reviews its details and saves it.
+- Automated tests validate command logic with mocks. Microphone and live website
+  behavior must still be checked on the interview laptop before the demo.
