@@ -139,6 +139,7 @@ open google
 open whatsapp
 open calendar
 type something
+read latest file
 copy link
 close tab
 sleep

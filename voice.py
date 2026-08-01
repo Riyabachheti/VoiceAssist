@@ -306,6 +306,13 @@ def execute(command: str) -> bool:
         calendar_mode()
     elif contains_any(command, ["type something", "write something"]):
         voice_to_type()
+    elif contains_any(command, ["read latest file", "read downloads"]):
+        latest_file = get_latest_supported_file(str(Path.home() / "Downloads"))
+        if latest_file:
+            speak(f"Reading {Path(latest_file).name}.")
+            read_file_aloud(latest_file)
+        else:
+            speak("I could not find a supported document in Downloads.")
     elif contains_any(command, ["close tab"]):
         pyautogui.hotkey("ctrl", "w")
         speak("Tab closed.")
