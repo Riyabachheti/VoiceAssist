@@ -3,6 +3,8 @@ import pyttsx3
 import pyautogui
 import webbrowser
 import time
+import subprocess
+import sys
 from PIL import Image
 import easyocr
 from fuzzywuzzy import fuzz
@@ -132,6 +134,19 @@ def voice_to_type():
         speak("Typing now.")
         time.sleep(2)
         pyautogui.typewrite(text)
+
+def open_in_chrome(url):
+    """Open a URL in Chrome and give the page time to become active."""
+    if sys.platform == "darwin":
+        result = subprocess.run(
+            ["/usr/bin/open", "-a", "Google Chrome", url],
+            check=False,
+        )
+        if result.returncode == 0:
+            time.sleep(4)
+            return
+    webbrowser.open(url)
+    time.sleep(4)
 
 def click_by_title(target_title):
     # Screenshot the screen
@@ -335,18 +350,17 @@ def execute_yt():
     command = listen()
     time.sleep(0.5)
     if "search" in command or "find" in command:
-            speak("Clicking the search bar. ")
-            pyautogui.moveTo(612, 138) 
-            pyautogui.click(clicks=3, interval=0.1)
+            speak("Focusing the YouTube search bar. ")
+            pyautogui.press('/')
+            time.sleep(0.5)
             voice_to_type()
             time.sleep(1)
             speak("Do you want me to press the search button?")
             confirmation = listen()
-            if "yes" in confirmation or "OK" in confirmation:
+            if "yes" in confirmation or "ok" in confirmation:
                 speak("Pressing search.")
                 time.sleep(1)
-                pyautogui.moveTo(1250, 144)
-                pyautogui.click()
+                pyautogui.press('enter')
                 
             else:
                 speak("Okay, not pressing search.")
@@ -356,10 +370,10 @@ def execute_yt():
         click_by_title(spoken_title)
 
     elif "scroll down" in command:
-        pyautogui.scroll(-1000)
+        pyautogui.press('pagedown')
         speak("Scrolling down")
     elif "scroll up" in command:
-        pyautogui.scroll(1000)
+        pyautogui.press('pageup')
         speak("Scrolling up")
     elif "go back" in command:
         pyautogui.hotkey('alt', 'left')
@@ -427,14 +441,14 @@ def execute_google():
 def execute(command):
     if "open youtube" in command or "youtube" in command:
         speak("Opening YouTube")
-        webbrowser.open("https://www.youtube.com")
+        open_in_chrome("https://www.youtube.com")
         while True:
             result =execute_yt()
             if result == "exit":
                 break
     elif "open google" in command or "google" in command:
         speak("Opening Google")
-        webbrowser.open("https://www.google.com")
+        open_in_chrome("https://www.google.com")
         speak("Clicking the search bar. ")
         pyautogui.moveTo(638, 479) 
         pyautogui.click()
@@ -455,14 +469,14 @@ def execute(command):
                 break
     elif "open whatsapp" in command or "whatsapp" in command:
         speak("Opening WhatsApp Web")
-        webbrowser.open("https://web.whatsapp.com")
+        open_in_chrome("https://web.whatsapp.com")
         while True:
             result =whatsapp_execute()
             if result == "exit":
                 break
     elif "reminder" in command:
         speak("setting a reminder")
-        webbrowser.open_new("https://calendar.google.com")
+        open_in_chrome("https://calendar.google.com")
         while True:
             result =execute_reminder()
             if result == "exit":
