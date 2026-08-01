@@ -6,6 +6,7 @@ import tempfile
 import time
 import webbrowser
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import docx
 import easyocr
@@ -172,9 +173,9 @@ def click_by_title(target_title: str) -> bool:
 def handle_browser_navigation(command: str) -> bool:
     """Handle navigation shared by the Google, YouTube, and WhatsApp modes."""
     if contains_any(command, ["scroll down"]):
-        pyautogui.scroll(-1000)
+        pyautogui.press("pagedown")
     elif contains_any(command, ["scroll up"]):
-        pyautogui.scroll(1000)
+        pyautogui.press("pageup")
     elif contains_any(command, ["go back"]):
         pyautogui.hotkey("alt", "left")
     elif contains_any(command, ["go forward"]):
@@ -197,10 +198,14 @@ def youtube_mode() -> None:
             speak("Leaving YouTube mode.")
             return
         if contains_any(command, ["search", "find"]):
-            pyautogui.click(*POSITIONS["youtube_search"])
-            if voice_to_type("What should I search for?"):
-                if contains_any(listen("Should I submit the search?"), ["yes", "ok"]):
-                    pyautogui.press("enter")
+            query = listen("What should I search for?")
+            if query and contains_any(
+                listen(f"Should I search YouTube for {query}?"), ["yes", "ok"]
+            ):
+                webbrowser.open(
+                    f"{URLS['youtube']}/results?search_query={quote_plus(query)}"
+                )
+                speak("Showing YouTube search results.")
         elif contains_any(command, ["click", "video"]):
             click_by_title(listen("Which title should I click?"))
         elif contains_any(command, ["play", "pause"]):

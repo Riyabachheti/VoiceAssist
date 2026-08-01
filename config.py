@@ -18,7 +18,6 @@ URLS = {
 
 # These positions are calibrated for the original development machine.
 POSITIONS = {
-    "youtube_search": (612, 138),
     "google_search": (638, 479),
     "whatsapp_search": (206, 195),
     "browser_address_bar": (218, 66),

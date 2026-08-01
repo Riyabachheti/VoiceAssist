@@ -163,7 +163,8 @@ The most representative demo is:
 
 1. Run `python voice.py`.
 2. Say **open YouTube**.
-3. Say **search** and dictate a query.
+3. Say **search**, dictate a query, and confirm it. VoiceAssist opens the
+   YouTube results URL directly instead of relying on a toolbar-dependent click.
 4. Say **click** and speak part of a visible video title.
 5. VoiceAssist captures the screen, finds the closest OCR match, and clicks it.
 
@@ -196,8 +197,9 @@ matching, and selection of the best OCR result.
 
 - Google Speech Recognition requires an internet connection.
 - PyAutoGUI controls whichever window currently has focus.
-- Several browser actions depend on coordinates calibrated for the original
-  machine and can break at other resolutions or after website redesigns.
+- Some experimental WhatsApp, Google, and Calendar actions depend on coordinates
+  calibrated for the original machine and can break at other resolutions or
+  after website redesigns. The recommended YouTube search demo does not.
 - OCR can misread stylized, small, or low-contrast text.
 - Scanned PDFs may not contain extractable text.
 - This is a rule-based automation prototype, not a general conversational AI.
