@@ -1,4 +1,5 @@
-"""VoiceAssist: a small voice-controlled desktop automation prototype."""
+"""VoiceAssist: a voice-controlled desktop automation assistant.
+This module uses speech recognition, text-to-speech, and screen automation to perform tasks"""
 
 import os
 import tempfile
@@ -72,6 +73,18 @@ def listen(prompt: str = "") -> str:
     except sr.RequestError as error:
         print(f"Speech recognition error: {error}")
         speak("The speech recognition service is unavailable.")
+    except OSError as error:
+        # Apple-silicon Macs cannot run SpeechRecognition's bundled Intel-only
+        # FLAC executable. A native `flac` package on PATH fixes conversion.
+        print(f"Audio conversion error: {error}")
+        if "bad cpu type" in str(error).lower():
+            speak("A native FLAC encoder is required on this Mac.")
+            print(
+                "Install it in this environment with: "
+                "conda install -c conda-forge libflac"
+            )
+        else:
+            speak("I could not convert the recorded audio.")
     return ""
 
 

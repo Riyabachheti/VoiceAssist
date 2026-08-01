@@ -110,8 +110,18 @@ macOS:
 
 ```bash
 brew install portaudio
+brew install flac
 pip install PyAudio
 ```
+
+For an Apple-silicon Conda environment, the self-contained alternative is:
+
+```bash
+conda install -c conda-forge portaudio pyaudio libflac
+```
+
+Native FLAC is required because SpeechRecognition's bundled macOS encoder is
+intended for Intel Macs and cannot run directly on Apple silicon.
 
 Debian/Ubuntu:
 
